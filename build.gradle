@@ -1,0 +1,98 @@
+projects {
+	apply plugin: 'java'
+	apply plugin: 'eclipse'
+
+	compileJava.options.encoding = 'UTF-8'
+	
+	sourceCompatibility = 1.8
+	targetCompatibility = 1.8
+
+	ext.projectName="Cobar"
+
+	repositories {
+		maven {
+			url 'http://maven.oschina.net/content/groups/public/'
+		}
+	}
+
+	dependencies {
+		compile(
+			fileTree(dir: 'lib', include: '*.jar'),
+		)
+	}
+	
+	sourceSets {
+		main {
+			java {
+				srcDirs = ["src"]
+			}
+			resources {
+				srcDirs = ["resources"]
+			}
+		}
+	}
+
+	task initPath {
+		sourceSets.main.java.srcDirs.each { it.mkdirs() }
+	}
+
+	ext.dependLibs = file("lib").list()
+	
+	jar {
+		manifest {
+			attributes(
+				'Main-Class': 'com.alibaba.cobar.CobarStartup',
+				'Class-Path': getMyClassPath(dependLibs, configurations.compile)
+			)
+		}
+	}
+	
+	//清除上次的编译过的文件  
+	task tackClean(type:Delete){
+	   delete 'build'
+	}
+	
+	// 生产jar
+	task taskCompile(type:Copy, dependsOn: assemble) {
+		from configurations.compile.filter {!dependLibs.contains(it.getName())}.asFileTree
+		into 'build/libs'
+	}
+	
+	//复制configure文件
+	task copyConf(type: Copy) {
+		from 'conf'
+		into 'export/' + projectName + '/conf'
+	}
+	
+	//复制依赖lib
+	task copyLib(type: Copy) {
+		from 'lib'
+		into 'export/' + projectName + '/lib'
+	}
+	
+	//复制启动文件
+	task copyBat(type: Copy) {
+		from 'bat'
+		into 'export/' + projectName + '/bin'
+	}
+	
+	//把JAR复制到目标目录  
+	task release(type: Copy, dependsOn: [tackClean, taskCompile, copyConf, copyLib, copyBat]) {
+		//复制jar
+		from 'build/libs'
+		into 'export/' + projectName
+	} 
+}
+
+String getMyClassPath(dependLibs, dependJars) {
+	def classPath = "conf/ "
+
+	for (def j : dependJars) {
+		if (dependLibs.contains(j.getName())) {
+			classPath += " lib/" + j.getName()
+		} else {
+			classPath += " " + j.getName()
+		}
+	}
+	return classPath;
+}

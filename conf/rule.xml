@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ - Copyright 1999-2012 Alibaba Group.
+ -  
+ - Licensed under the Apache License, Version 2.0 (the "License");
+ - you may not use this file except in compliance with the License.
+ - You may obtain a copy of the License at
+ -  
+ -      http://www.apache.org/licenses/LICENSE-2.0
+ -  
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+-->
+<!DOCTYPE cobar:rule SYSTEM "rule.dtd">
+<cobar:rule xmlns:cobar="http://cobar.alibaba.com/">
+
+  <!-- 路由规则定义，定义什么表，什么字段，采用什么路由算法 -->
+  <tableRule name="playerRule">
+    <rule>
+      <columns>id</columns>
+	  <!-- id 是按Snowflake生成的,取高41位时间戳作为路由基本值-->
+      <algorithm><![CDATA[ routeFunc(${id}) ]]></algorithm>
+    </rule>
+  </tableRule>
+  
+    <tableRule name="playerDataRule">
+    <rule>
+      <columns>playerId</columns>
+	  <!-- playerId 是按Snowflake生成的,取高41位时间戳作为路由基本值-->
+      <algorithm><![CDATA[ routeFunc(${playerId}) ]]></algorithm>
+    </rule>
+  </tableRule>
+
+  <!-- 路由函数定义 -->
+  <function name="routeFunc" class="com.alibaba.cobar.route.function.PartitionByLongOfSnowflake">
+    <property name="partitionCount">2</property>
+    <property name="partitionLength">512</property>
+  </function>
+
+</cobar:rule>
